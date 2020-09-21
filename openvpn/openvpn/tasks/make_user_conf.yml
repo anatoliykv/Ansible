@@ -1,0 +1,9 @@
+---
+# make clients config file
+
+- name: Generate user config
+  shell: |
+    echo -e "<cert>\n`sed -n '68, 1000000p' /etc/openvpn/easy-rsa/keys/client1.crt`\n</cert>\n" >> ./openvpn/templates/client1.ovpn.j2
+    echo -e "<ca>\n`cat /etc/openvpn/easy-rsa/keys/ca.crt`\n</ca>\n" >> ./openvpn/templates/client1.ovpn.j2
+    echo -e "<key>\n`cat /etc/openvpn/easy-rsa/keys/client1.key`\n</key>\n" >> ./openvpn/templates/client1.ovpn.j2
+    

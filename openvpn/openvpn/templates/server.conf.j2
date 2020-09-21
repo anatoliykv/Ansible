@@ -1,0 +1,23 @@
+port 1194
+proto udp
+dev tun
+ca ca.crt
+cert server.crt
+key server.key
+dh dh2048.pem
+push "redirect-gateway def1 bypass-dhcp" #default gateway by VPN
+push "dhcp-option DNS {{ DNS1 }}"
+push "dhcp-option DNS {{ DNS2 }}"
+user nobody
+group nogroup
+server {{ serverIP }} {{ serverMASK }}
+keepalive 10 120
+comp-lzo
+persist-key
+persist-tun
+cipher AES-256-CBC
+verb 3
+client-to-client
+duplicate-cn
+username-as-common-name
+plugin /usr/lib/openvpn/openvpn-auth-ldap.so /etc/openvpn/auth/ldap.conf

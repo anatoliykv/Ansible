@@ -1,0 +1,8 @@
+---
+# vars file for openvpn
+
+DNS1: 192.168.88.100
+DNS2: 8.8.8.8
+serverIP: 192.168.100.0
+serverMASK: 255.255.255.0
+server_ip: $server_ip

@@ -1,0 +1,13 @@
+---
+
+- name: Configure LDAP
+  file:
+    path: /etc/openvpn/auth/
+    state: directory
+    mode: '0755'
+
+- name: Copy ldap.conf
+  copy:
+    src: ./openvpn/files/ldap.conf
+    dest: /etc/openvpn/auth/ldap.conf
+    

@@ -1,0 +1,71 @@
+---
+# tasks file for openvpn
+
+#- name: Get and add server ip to vars
+#  shell:
+#    cmd: echo "server_ip  = `curl http://checkip.amazonaws.com`" >> ./openvpn/vars/main.yml
+    
+- name: Update cache
+  apt: 
+    update_cache: yes
+
+- name: Install OpenVPN and EasyRSA
+  apt:
+    pkg:
+    - openvpn
+    - easy-rsa
+    - openvpn-auth-ldap
+    state: latest
+
+- name: Copy file config file to OpenVPN Server
+  template:
+    src: ./openvpn/templates/server.conf.j2
+    dest: /etc/openvpn/server.conf
+
+- name: Allow traffic exchange between network interfaces
+  shell: |
+    echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf && sysctl -p
+    iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o eth0 -j MASQUERADE
+
+- name: MkDir
+  file:
+    path: /etc/openvpn/easy-rsa/keys
+    state: directory
+    mode: '0755'
+
+- name: Copy scripts
+  copy:
+    src: /usr/share/easy-rsa/ 
+    dest: /etc/openvpn/
+
+- name: Copy vars
+  copy:
+    src: ./openvpn/files/vars
+    dest: /etc/openvpn/easy-rsa/vars
+
+- name: Generaate Key
+  shell:
+    cmd: openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+
+- name: Install vars
+  shell: cd /etc/openvpn/easy-rsa && . ./vars
+
+- name: Create openssl.cnf
+  shell:
+    cmd: cp /etc/openvpn/easy-rsa/openssl-1.0.0.cnf /etc/openvpn/easy-rsa/openssl.cnf
+
+- name: Generaate CA
+  shell: |
+    cd /etc/openvpn/easy-rsa
+    ./clean-all
+    (echo -en "\n\n\n\n\n\n\n\n"; sleep 1; echo -en "\n"; sleep 1; echo -en "\n"; sleep 3; echo -en "yes"; echo -en "\n"; sleep 3; echo -en "yes"; echo -en "\n") | ./build-ca
+    (echo -en "\n\n\n\n\n\n\n\n"; sleep 1; echo -en "\n"; sleep 1; echo -en "\n"; sleep 3; echo -en "yes"; echo -en "\n"; sleep 3; echo -en "yes"; echo -en "\n") | ./build-key-server server
+    cp /etc/openvpn/easy-rsa/keys/{server.crt,server.key,ca.crt} /etc/openvpn
+    (echo -en "\n\n\n\n\n\n\n\n"; sleep 1; echo -en "\n"; sleep 1; echo -en "\n"; sleep 3; echo -en "yes"; echo -en "\n"; sleep 3; echo -en "yes"; echo -en "\n") | ./build-key client1
+  notify:
+    - restart openvpn.service
+
+- include_tasks: make_user_conf.yml
+
+- include_tasks: configure_ldap.yml
+  
